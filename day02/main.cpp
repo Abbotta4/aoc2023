@@ -29,14 +29,37 @@ bool checkGame(std::string game) {
         std::string color = pull.substr(pull.find(" ")+1);
         if (color == "red" && number > 12)
             return false;
-        if (color == "green" && number > 13)
+        else if (color == "green" && number > 13)
             return false;
-        if (color == "blue" && number > 14)
+        else if (color == "blue" && number > 14)
             return false;
         ++smti;
     }
 
     return true;
+}
+
+int getPower(std::string game) {
+    std::regex r("([0-9]+ [a-z]+)");
+    std::sregex_token_iterator smti(game.begin(), game.end(), r);
+    int red = 0;
+    int blue = 0;
+    int green = 0;
+
+    while(smti != std::sregex_token_iterator()) { // default constructor makes the end-of-sequence iterator
+        std::string pull = *smti;
+        int number = std::stoi(pull.substr(0, pull.find(" ")));
+        std::string color = pull.substr(pull.find(" ")+1);
+        if (color == "red")
+            red = std::max(red, number);
+        else if (color == "green")
+            green = std::max(green, number);
+        else if (color == "blue")
+            blue = std::max(blue, number);
+        ++smti;
+    }
+
+    return red * blue * green;
 }
 
 int main() {
@@ -50,6 +73,12 @@ int main() {
             sum += std::stoi(sm[1]);
     }
     std::cout << sum << std::endl;
+
+    int power = 0;
+    for (std::string game: games) {
+        power += getPower(game);
+    }
+    std::cout << power << std::endl;
 
     return 0;
 }
