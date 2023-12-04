@@ -4,6 +4,7 @@
 #include <set>
 #include <regex>
 #include <cmath>
+#include <numeric>
 
 std::vector<std::string> readInput(std::string const& fileName) {
     std::vector<std::string> input;
@@ -19,7 +20,7 @@ std::vector<std::string> readInput(std::string const& fileName) {
     return input;
 }
 
-int checkPoints(std::string const& card) {
+int getMatches(std::string const& card) {
     std::regex cre("Card [0-9 ]+: ([0-9 ]+)\\| ([0-9 ]+)");
     std::regex nre("[0-9]+");
 
@@ -46,14 +47,30 @@ int checkPoints(std::string const& card) {
                           playerNumbers.begin(), playerNumbers.end(),
                           std::back_inserter(matches));
 
-    return matches.size() > 0 ? std::pow(2, matches.size()-1) : 0;
+    return matches.size();
+
 }
 
 int main() {
     auto cards = readInput("input.txt");
     int sum = 0;
-    for (auto card: cards)
-        sum += checkPoints(card);
+    for (auto card: cards) {
+        int matches = getMatches(card);
+        sum += matches > 0 ? std::pow(2, matches-1) : 0;
+    }
+    std::cout << sum << std::endl;
+
+    std::map<int, int> copies;
+    for (int i = 0; i < cards.size(); ++i)
+        copies[i] = 1;
+    for (int i = 0; i < cards.size(); ++i) {
+        int matches = getMatches(cards[i]);
+        for (int j = 1; j <= matches; ++j) {
+            copies[i+j] += copies[i];
+        }            
+    }
+
+    sum = std::accumulate(copies.begin(), copies.end(), 0, [](int a, std::pair<int,int> b){ return a + b.second; });
     std::cout << sum << std::endl;
 
     return 0;
