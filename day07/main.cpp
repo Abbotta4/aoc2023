@@ -19,73 +19,48 @@ std::vector<std::string> readInput(std::string const& fileName) {
     return input;
 }
 
-bool isFiveOfAKind(std::string const& hand) {
-    std::set<char> s;
-    for (char c: hand)
-        s.insert(c);
-    return s.size() == 1;
-}
-
-bool isFourOfAKind(std::string const& hand) {
+bool isXOfAKind(std::string const& hand, int x, bool jokers) {
     std::set<char> s;
     for (char c: hand)
         s.insert(c);
     for (char c: s) {
-        if (std::count(hand.begin(), hand.end(), c) == 4)
+        if (std::count(hand.begin(), hand.end(), c) + (jokers && c != 'J' ? std::count(hand.begin(), hand.end(), 'J') : 0) == x)
             return true;
     }
     return false;
 }
 
-bool isThreeOfAKind(std::string const& hand) {
+bool isFullHouse(std::string const& hand, bool jokers) {
     std::set<char> s;
     for (char c: hand)
         s.insert(c);
-    for (char c: s) {
-        if (std::count(hand.begin(), hand.end(), c) == 3)
-            return true;
-    }
-    return false;
+    return s.size() == (2 + (jokers && s.contains('J') ? 1 : 0)) && isXOfAKind(hand, 3, jokers) && !isXOfAKind(hand, 4, jokers);
 }
 
-bool isFullHouse(std::string const& hand) {
+bool isTwoPair(std::string const& hand, bool jokers) {
     std::set<char> s;
     for (char c: hand)
         s.insert(c);
-    return s.size() == 2 && isThreeOfAKind(hand) && !isFourOfAKind(hand);
+    return s.size() == (3 + (jokers && s.contains('J') ? 1 : 0)) && !isXOfAKind(hand, 3, jokers);
 }
 
-bool isTwoPair(std::string const& hand) {
-    std::set<char> s;
-    for (char c: hand)
-        s.insert(c);
-    return s.size() == 3 && !isThreeOfAKind(hand);
-}
-
-bool isOnePair(std::string const& hand) {
-    std::set<char> s;
-    for (char c: hand)
-        s.insert(c);
-    return s.size() < 5;
-}
-
-int getHandStrength(std::string const& hand) {
-    if (isFiveOfAKind(hand))
+int getHandStrength(std::string const& hand, bool jokers) {
+    if (isXOfAKind(hand, 5, jokers))
         return 7;
-    else if (isFourOfAKind(hand))
+    else if (isXOfAKind(hand, 4, jokers))
         return 6;
-    else if (isFullHouse(hand))
+    else if (isFullHouse(hand, jokers))
         return 5;
-    else if (isThreeOfAKind(hand))
+    else if (isXOfAKind(hand, 3, jokers))
         return 4;
-    else if (isTwoPair(hand))
+    else if (isTwoPair(hand, jokers))
         return 3;
-    else if (isOnePair(hand))
+    else if (isXOfAKind(hand, 2, jokers))
         return 2;
     return 1;
 }
 
-int getCardStrength(char const& card) {
+int getCardStrength(char const& card, bool jokers) {
     switch (card) {
     case 'A':
         return 14;
@@ -94,21 +69,21 @@ int getCardStrength(char const& card) {
     case 'Q':
         return 12;
     case 'J':
-        return 11;
+        return jokers ? 1 : 11;
     case 'T':
         return 10;
     }
     return static_cast<int>(card) - '0';
 }
 
-bool compareHands(std::string const& first, std::string const& second) {
-    int firstHandStrength = getHandStrength(first);
-    int secondHandStrength = getHandStrength(second);
+bool compareHands(std::string const& first, std::string const& second, bool jokers) {
+    int firstHandStrength = getHandStrength(first, jokers);
+    int secondHandStrength = getHandStrength(second, jokers);
 
     if (firstHandStrength == secondHandStrength) {
         for (int card = 0; card < 5; ++card) {
-            int firstCardStrength = getCardStrength(first[card]);
-            int secondCardStrength = getCardStrength(second[card]);
+            int firstCardStrength = getCardStrength(first[card], jokers);
+            int secondCardStrength = getCardStrength(second[card], jokers);
             if (firstCardStrength != secondCardStrength)
                 return firstCardStrength < secondCardStrength;
         }
@@ -128,17 +103,21 @@ std::vector<std::pair<std::string, int>> getHands(std::vector<std::string> input
     return ret;
 }
 
+int getWinnings(std::vector<std::pair<std::string, int>> hands) {
+    int winnings = 0;
+    for (int i = 0; i < hands.size(); ++i)
+        winnings += (i + 1) * hands[i].second;
+    return winnings;
+}
+
 int main() {
     auto hands = getHands(readInput("input.txt"));
-    std::sort(hands.begin(), hands.end(), [](auto a, auto b){ return compareHands(a.first, b.first); });
 
-    int winnings = 0;
-    for (int i = 0; i < hands.size(); ++i) {
-        std::cout << hands[i].first << " is strength " << getHandStrength(hands[i].first) << ", " << hands[i].second << " * " << i+1 << std::endl;
-        winnings += (i + 1) * hands[i].second;
-    }
+    std::sort(hands.begin(), hands.end(), [](auto a, auto b){ return compareHands(a.first, b.first, false); });
+    std::cout << getWinnings(hands) << std::endl;
 
-    std::cout << winnings << std::endl;
+    std::sort(hands.begin(), hands.end(), [](auto a, auto b){ return compareHands(a.first, b.first, true); });
+    std::cout << getWinnings(hands) << std::endl;
 
     return 0;
 }
