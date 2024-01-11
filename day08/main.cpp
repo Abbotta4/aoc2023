@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include <regex>
+#include <numeric>
 
 std::vector<std::string> readInput(std::string const& fileName) {
     std::vector<std::string> input;
@@ -36,29 +37,6 @@ std::pair<std::string, int> stepsRequired(std::string const& instructions, std::
     }
 }
 
-bool checkForArrival(std::vector<std::pair<std::string, int>> const& steps) {
-    auto temp = steps[0].second;
-    for (auto const& step: steps) {
-        if (step.second != temp || step.first[2] != 'Z')
-            return false;
-    }
-    return true;
-}
-
-int processGhosts(std::vector<std::string> const& ghosts, std::string const& instructions, std::map<std::string, std::pair<std::string, std::string>> const& network) {
-    std::vector<std::pair<std::string, int>> steps;
-    for (auto const& ghost: ghosts)
-        steps.push_back(std::pair(ghost, 0));
-
-    while (!checkForArrival(steps)) {
-        auto min = std::max_element(steps.begin(), steps.end(), [](auto a, auto b){ return a.second > b.second; });
-        auto temp = stepsRequired(instructions, network, min->first, true);
-        min->first = temp.first;
-        min->second += temp.second;
-    }
-    return steps[0].second;
-}
-
 int main() {
     auto input = readInput("input.txt");
     std::string instructions = input[0];
@@ -71,8 +49,12 @@ int main() {
         if (key[2] == 'A')
             ghosts.push_back(key);
     }
-    
-    std::cout << processGhosts(ghosts, instructions, network) << std::endl;
+
+    std::vector<int> steps;
+    for (auto const& ghost: ghosts)
+        steps.push_back(stepsRequired(instructions, network, ghost, true).second);
+
+    std::cout << std::accumulate(steps.begin(), steps.end(), (long)1, [](long a, long b){ return std::lcm(a, b); }) << std::endl;
 
     return 0;
 }
