@@ -4,6 +4,7 @@
 #include <vector>
 #include <regex>
 #include <stack>
+#include <algorithm>
 
 std::vector<std::vector<int>> readInput(std::string const& fileName) {
     std::vector<std::vector<int>> input;
@@ -57,6 +58,13 @@ int main() {
     int valSum = 0;
     for (auto const& line: input)
         valSum += extrapolate(line);
+    std::cout << valSum << std::endl;
+
+    valSum = 0;
+    for (auto line: input) {
+        std::reverse(line.begin(), line.end());
+        valSum += extrapolate(line);
+    }
     std::cout << valSum << std::endl;
 
     return 0;
